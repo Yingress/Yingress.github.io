@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消防员考核管理系统（在线版）</title>
+    <!-- PWA配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#E71D36">
+    <!-- 本地资源引用 -->
+    <link href="css/tailwind.min.css" rel="stylesheet">
+    <link href="css/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <script src="js/core-js.min.js"></script>
+    <script src="js/chart.umd.min.js"></script>
+    <script src="js/storage.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0A2463', // 深蓝色
+                        secondary: '#E71D36', // 消防红
+                        success: '#2EC4B6', // 青色
+                        warning: '#FF9F1C', // 橙色
+                        danger: '#E71D36', // 红色
+                        info: '#011627', // 深色
+                        light: '#FDFFFC', // 白色
+                        dark: '#011627', // 深色
+                        'gray-100': '#F8F9FA',
+                        'gray-200': '#E9ECEF',
+                        'gray-300': '#DEE2E6',
+                        'gray-400': '#CED4DA',
+                        'gray-500': '#ADB5BD',
+                        'gray-600': '#6C757D',
+                        'gray-700': '#495057',
+                        'gray-800': '#343A40',
+                        'gray-900': '#212529'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "linear-gradient(to right, #0A2463 0%, #E71D36 100%)",
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-all-300 {
+                transition: all 300ms ease-in-out;
+            }
+            .sidebar-active {
+                @apply bg-primary text-white;
+            }
+            .sidebar-icon {
+                @apply mr-3 text-lg;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-all duration-300 touch-friendly;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-all duration-300 touch-friendly;
+            }
+            .btn-danger {
+                @apply bg-danger text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-all duration-300 touch-friendly;
+            }
+            .btn-outline {
+                @apply border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-100 transition-all duration-300 touch-friendly;
+            }
+            .form-input {
+                @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent touch-friendly;
+            }
+            .form-label {
+                @apply block text-sm font-medium text-gray-700 mb-1;
+            }
+            .form-group {
+                @apply mb-4;
+            }
+            .badge {
+                @apply px-2 py-1 text-xs font-semibold rounded-full;
+            }
+            .badge-success {
+                @apply bg-success bg-opacity-20 text-success;
+            }
+            .badge-warning {
+                @apply bg-warning bg-opacity-20 text-warning;
+            }
+            .badge-danger {
+                @apply bg-danger bg-opacity-20 text-danger;
+            }
+            .table-header {
+                @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+            }
+            .table-cell {
+                @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+            }
+            .table-row {
+                @apply bg-white border-b hover:bg-gray-50;
+            }
+            .gradient-bg {
+                @apply bg-gradient-to-r from-primary to-secondary;
+            }
+            .card-border-red {
+                @apply border-l-4 border-secondary;
+            }
+            .card-border-blue {
+                @apply border-l-4 border-primary;
+            }
+            .card-border-green {
+                @apply border-l-4 border-success;
+            }
+            .card-border-orange {
+                @apply border-l-4 border-warning;
+            }
+            .hero-section {
+                @apply bg-cover bg-center relative overflow-hidden;
+            }
+            .hero-overlay {
+                @apply absolute inset-0 bg-gradient-to-r from-primary/80 to-secondary/80;
+            }
+            .hero-content {
+                @apply relative z-10;
+            }
+            .touch-friendly {
+                @apply min-h-[44px] min-w-[44px];
+            }
+            .mobile-scroll {
+                @apply -webkit-overflow-scrolling: touch;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏 -->
+        <aside class="w-64 bg-white shadow-md hidden md:block">
+            <div class="p-4 flex items-center justify-center border-b gradient-bg">
+                <div class="h-10 w-10 rounded-full bg-white flex items-center justify-center mr-2">
+                    <i class="fa fa-fire text-secondary text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-white">消防员考核管理系统</h1>
+            </div>
+            <nav class="mt-4">
+                <ul>
+                    <li>
+                        <a href="#dashboard" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 sidebar-active" data-target="dashboard">
+                            <i class="fa fa-dashboard sidebar-icon"></i>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#login" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="login">
+                            <i class="fa fa-sign-in sidebar-icon"></i>
+                            <span>登录/注册</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#personnel" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="personnel">
+                            <i class="fa fa-users sidebar-icon"></i>
+                            <span>人员管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#assessment" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="assessment">
+                            <i class="fa fa-clipboard-check sidebar-icon"></i>
+                            <span>考核管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#data-board" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="data-board">
+                            <i class="fa fa-chart-bar sidebar-icon"></i>
+                            <span>数据看板</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#export" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="export">
+                            <i class="fa fa-download sidebar-icon"></i>
+                            <span>数据导出</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#settings" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="settings">
+                            <i class="fa fa-cog sidebar-icon"></i>
+                            <span>系统设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between px-6 py-3">
+                    <div class="flex items-center">
+                        <button id="sidebar-toggle" class="md:hidden mr-4 text-gray-600 touch-friendly">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <h2 id="page-title" class="text-lg font-semibold text-gray-800">仪表盘</h2>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="relative mr-4">
+                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                <i class="fa fa-bell"></i>
+                                <span class="absolute top-0 right-0 h-2 w-2 bg-secondary rounded-full"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center" id="user-info">
+                            <div class="h-8 w-8 rounded-full gradient-bg flex items-center justify-center mr-2">
+                                <i class="fa fa-user text-white"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">未登录</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 移动端侧边栏 -->
+            <div id="mobile-sidebar" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden">
+                <div class="w-64 bg-white h-full overflow-y-auto mobile-scroll">
+                    <div class="p-4 flex items-center justify-between border-b gradient-bg">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 rounded-full bg-white flex items-center justify-center mr-2">
+                                <i class="fa fa-fire text-secondary text-xl"></i>
+                            </div>
+                            <h1 class="text-xl font-bold text-white">消防员考核管理系统</h1>
+                        </div>
+                        <button id="close-sidebar" class="text-gray-600 touch-friendly">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                    <nav class="mt-4">
+                        <ul>
+                            <li>
+                                <a href="#dashboard" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 sidebar-active" data-target="dashboard">
+                                    <i class="fa fa-dashboard sidebar-icon"></i>
+                                    <span>仪表盘</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#login" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="login">
+                                    <i class="fa fa-sign-in sidebar-icon"></i>
+                                    <span>登录/注册</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#personnel" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="personnel">
+                                    <i class="fa fa-users sidebar-icon"></i>
+                                    <span>人员管理</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#assessment" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="assessment">
+                                    <i class="fa fa-clipboard-check sidebar-icon"></i>
+                                    <span>考核管理</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#data-board" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="data-board">
+                                    <i class="fa fa-chart-bar sidebar-icon"></i>
+                                    <span>数据看板</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#export" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="export">
+                                    <i class="fa fa-download sidebar-icon"></i>
+                                    <span>数据导出</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#settings" class="mobile-sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100" data-target="settings">
+                                    <i class="fa fa-cog sidebar-icon"></i>
+                                    <span>系统设置</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- 页面内容 -->
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-100 mobile-scroll">
+                <!-- 登录/注册页面 -->
+                <section id="login" class="page-section hidden">
+                    <div class="max-w-md mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
+                        <div class="gradient-bg px-6 py-8 text-center">
+                            <div class="h-16 w-16 rounded-full bg-white flex items-center justify-center mx-auto mb-4">
+                                <i class="fa fa-fire text-secondary text-2xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-white">消防员考核管理系统</h2>
+                            <p class="text-white opacity-80 mt-2">登录后查看个人考核成绩</p>
+                        </div>
+                        <div class="px-6 py-8">
+                            <!-- 登录/注册选项卡 -->
+                            <div class="flex mb-8">
+                                <button id="login-tab" class="flex-1 py-2 text-center font-medium text-primary border-b-2 border-primary touch-friendly">
+                                    登录
+                                </button>
+                                <button id="register-tab" class="flex-1 py-2 text-center font-medium text-gray-500 border-b-2 border-transparent touch-friendly">
+                                    注册
+                                </button>
+                            </div>
+
+                            <!-- 登录表单 -->
+                            <div id="login-form">
+                                <div class="form-group">
+                                    <label for="login-username" class="form-label">用户名/编号</label>
+                                    <input type="text" id="login-username" class="form-input" placeholder="请输入用户名或消防员编号">
+                                </div>
+                                <div class="form-group">
+                                    <label for="login-password" class="form-label">密码</label>
+                                    <input type="password" id="login-password" class="form-input" placeholder="请输入密码">
+                                </div>
+                                <div class="form-group flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="remember-me" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        <label for="remember-me" class="ml-2 text-sm text-gray-700">记住我</label>
+                                    </div>
+                                    <a href="#" class="text-sm text-primary hover:text-primary/80">忘记密码？</a>
+                                </div>
+                                <button id="login-btn" class="btn-secondary w-full">
+                                    <i class="fa fa-sign-in mr-2"></i>登录系统
+                                </button>
+                                <div class="mt-4 text-center text-sm text-gray-600">
+                                    管理员账号：admin / 密码：123456<br>
+                                    测试账号：FF-2024-0001 / 密码：123456
+                                </div>
+                            </div>
+
+                            <!-- 注册表单（隐藏） -->
+                            <div id="register-form" class="hidden">
+                                <div class="form-group">
+                                    <label for="reg-name" class="form-label">真实姓名</label>
+                                    <input type="text" id="reg-name" class="form-input" placeholder="请输入真实姓名">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-id" class="form-label">消防员编号</label>
+                                    <input type="text" id="reg-id" class="form-input" placeholder="请输入消防员编号（如FF-2024-0001）">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-username" class="form-label">用户名</label>
+                                    <input type="text" id="reg-username" class="form-input" placeholder="请设置登录用户名">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-password" class="form-label">设置密码</label>
+                                    <input type="password" id="reg-password" class="form-input" placeholder="请设置密码（不少于6位）">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-repassword" class="form-label">确认密码</label>
+                                    <input type="password" id="reg-repassword" class="form-input" placeholder="请再次输入密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="reg-department" class="form-label">所属部门</label>
+                                    <select id="reg-department" class="form-input">
+                                        <option value="">请选择所属部门</option>
+                                        <option value="特勤一中队">特勤一中队</option>
+                                        <option value="特勤二中队">特勤二中队</option>
+                                        <option value="战勤保障大队">战勤保障大队</option>
+                                        <option value="消防训练基地">消防训练基地</option>
+                                    </select>
+                                </div>
+                                <button id="register-btn" class="btn-secondary w-full">
+                                    <i class="fa fa-user-plus mr-2"></i>完成注册
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 仪表盘页面 -->
+                <section id="dashboard" class="page-section">
+                    <!-- 英雄区域 -->
+                    <div class="hero-section h-64 rounded-lg mb-6 hero-pattern">
+                        <div class="hero-overlay"></div>
+                        <div class="hero-content h-full flex flex-col justify-center px-8">
+                            <h1 class="text-3xl font-bold text-white mb-2">消防员考核管理系统</h1>
+                            <p class="text-lg text-white opacity-90 mb-4">实时监控考核数据，提升队伍整体素质</p>
+                            <div class="flex space-x-4">
+                                <button class="bg-white text-primary font-medium px-4 py-2 rounded-md hover:bg-opacity-90 transition-all duration-300 touch-friendly">
+                                    <i class="fa fa-bar-chart mr-2"></i>查看数据报告
+                                </button>
+                                <button class="bg-secondary text-white font-medium px-4 py-2 rounded-md hover:bg-opacity-90 transition-all duration-300 touch-friendly">
+                                    <i class="fa fa-plus mr-2"></i>新增考核
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <!-- 卡片 1：消防员总数 -->
+                        <div class="bg-white rounded-lg shadow p-6 card-hover card-border-blue">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-primary text-white">
+                                    <i class="fa fa-users fa-2x"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">消防员总数</p>
+                                    <p class="text-2xl font-semibold text-gray-900">128</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span class="text-sm font-medium text-green-600">
+                                    <i class="fa fa-arrow-up mr-1"></i> 4.6%
+                                </span>
+                                <span class="text-sm text-gray-500 ml-2">较上月</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 卡片 2：本月考核次数 -->
+                        <div class="bg-white rounded-lg shadow p-6 card-hover card-border-red">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-secondary text-white">
+                                    <i class="fa fa-clipboard-check fa-2x"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">本月考核次数</p>
+                                    <p class="text-2xl font-semibold text-gray-900">32</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span class="text-sm font-medium text-green-600">
+                                    <i class="fa fa-arrow-up mr-1"></i> 8.2%
+                                </span>
+                                <span class="text-sm text-gray-500 ml-2">较上月</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 卡片 3：考核通过率 -->
+                        <div class="bg-white rounded-lg shadow p-6 card-hover card-border-green">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-success text-white">
+                                    <i class="fa fa-check-circle fa-2x"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">考核通过率</p>
+                                    <p class="text-2xl font-semibold text-gray-900">92.5%</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span class="text-sm font-medium text-green-600">
+                                    <i class="fa fa-arrow-up mr-1"></i> 2.1%
+                                </span>
+                                <span class="text-sm text-gray-500 ml-2">较上月</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 卡片 4：待处理任务 -->
+                        <div class="bg-white rounded-lg shadow p-6 card-hover card-border-orange">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-warning text-white">
+                                    <i class="fa fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-500">待处理任务</p>
+                                    <p class="text-2xl font-semibold text-gray-900">7</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex items-center">
+                                <span class="text-sm font-medium text-red-600">
+                                    <i class="fa fa-arrow-up mr-1"></i> 3
+                                </span>
+                                <span class="text-sm text-gray-500 ml-2">较昨日</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 图表区域 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- 图表 1：各部门考核通过率 -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">各部门考核通过率</h3>
+                            <div class="h-80">
+                                <canvas id="departmentPassRateChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 图表 2：近6个月考核次数趋势 -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">近6个月考核次数趋势</h3>
+                            <div class="h-80">
+                                <canvas id="assessmentTrendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 最近考核记录 -->
+                    <div class="bg-white rounded-lg shadow mb-6">
+                        <div class="px-6 py-4 border-b gradient-bg">
+                            <h3 class="text-lg font-semibold text-white">最近考核记录</h3>
+                        </div>
+                        <div class="overflow-x-auto mobile-scroll">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="table-header">考核编号</th>
+                                        <th scope="col" class="table-header">考核名称</th>
+                                        <th scope="col" class="table-header">考核日期</th>
+                                        <th scope="col" class="table-header">参与人数</th>
+                                        <th scope="col" class="table-header">通过率</th>
+                                        <th scope="col" class="table-header">状态</th>
+                                        <th scope="col" class="table-header">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr class="table-row">
+                                        <td class="table-cell">AS-2024-0721-001</td>
+                                        <td class="table-cell">季度体能考核</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">32</td>
+                                        <td class="table-cell">93.8%</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">已完成</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">AS-2024-0718-001</td>
+                                        <td class="table-cell">消防技能考核</td>
+                                        <td class="table-cell">2024-07-18</td>
+                                        <td class="table-cell">28</td>
+                                        <td class="table-cell">96.4%</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">已完成</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">AS-2024-0715-001</td>
+                                        <td class="table-cell">理论知识考试</td>
+                                        <td class="table-cell">2024-07-15</td>
+                                        <td class="table-cell">45</td>
+                                        <td class="table-cell">88.9%</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">已完成</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">AS-2024-0710-001</td>
+                                        <td class="table-cell">应急救援演练</td>
+                                        <td class="table-cell">2024-07-10</td>
+                                        <td class="table-cell">36</td>
+                                        <td class="table-cell">91.7%</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">已完成</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">AS-2024-0705-001</td>
+                                        <td class="table-cell">新入职消防员考核</td>
+                                        <td class="table-cell">2024-07-05</td>
+                                        <td class="table-cell">12</td>
+                                        <td class="table-cell">83.3%</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">已完成</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-download"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500">
+                                    显示 <span class="font-medium">1</span> 到 <span class="font-medium">5</span> 共 <span class="font-medium">24</span> 条记录
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="btn-outline mr-2 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                    <button class="btn-primary mr-2">1</button>
+                                    <button class="btn-outline mr-2">2</button>
+                                    <button class="btn-outline mr-2">3</button>
+                                    <button class="btn-outline mr-2">4</button>
+                                    <button class="btn-outline mr-2">5</button>
+                                    <button class="btn-outline">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 人员管理页面 -->
+                <section id="personnel" class="page-section hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">人员管理</h2>
+                        <button id="add-personnel-btn" class="btn-secondary">
+                            <i class="fa fa-plus mr-2"></i>新增消防员
+                        </button>
+                    </div>
+                    
+                    <!-- 搜索和筛选 -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="form-group">
+                                <label for="search-name" class="form-label">姓名</label>
+                                <input type="text" id="search-name" class="form-input" placeholder="请输入姓名">
+                            </div>
+                            <div class="form-group">
+                                <label for="search-id" class="form-label">编号</label>
+                                <input type="text" id="search-id" class="form-input" placeholder="请输入编号">
+                            </div>
+                            <div class="form-group">
+                                <label for="search-department" class="form-label">所属部门</label>
+                                <select id="search-department" class="form-input">
+                                    <option value="">全部部门</option>
+                                    <option value="特勤一中队">特勤一中队</option>
+                                    <option value="特勤二中队">特勤二中队</option>
+                                    <option value="战勤保障大队">战勤保障大队</option>
+                                    <option value="消防训练基地">消防训练基地</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-end mt-4">
+                            <button class="btn-outline mr-2">
+                                <i class="fa fa-refresh mr-1"></i>重置
+                            </button>
+                            <button class="btn-primary">
+                                <i class="fa fa-search mr-1"></i>搜索
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 人员列表 -->
+                    <div class="bg-white rounded-lg shadow mb-6">
+                        <div class="px-6 py-4 border-b gradient-bg">
+                            <h3 class="text-lg font-semibold text-white">消防员列表</h3>
+                        </div>
+                        <div class="overflow-x-auto mobile-scroll">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="table-header">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </th>
+                                        <th scope="col" class="table-header">编号</th>
+                                        <th scope="col" class="table-header">姓名</th>
+                                        <th scope="col" class="table-header">年龄</th>
+                                        <th scope="col" class="table-header">性别</th>
+                                        <th scope="col" class="table-header">所属部门</th>
+                                        <th scope="col" class="table-header">职位</th>
+                                        <th scope="col" class="table-header">入职日期</th>
+                                        <th scope="col" class="table-header">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr class="table-row">
+                                        <td class="table-cell">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </td>
+                                        <td class="table-cell">FF-2024-0001</td>
+                                        <td class="table-cell">张明</td>
+                                        <td class="table-cell">28</td>
+                                        <td class="table-cell">男</td>
+                                        <td class="table-cell">特勤一中队</td>
+                                        <td class="table-cell">中队长</td>
+                                        <td class="table-cell">2018-06-15</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </td>
+                                        <td class="table-cell">FF-2024-0002</td>
+                                        <td class="table-cell">李华</td>
+                                        <td class="table-cell">25</td>
+                                        <td class="table-cell">男</td>
+                                        <td class="table-cell">特勤一中队</td>
+                                        <td class="table-cell">副中队长</td>
+                                        <td class="table-cell">2019-03-10</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </td>
+                                        <td class="table-cell">FF-2024-0003</td>
+                                        <td class="table-cell">王芳</td>
+                                        <td class="table-cell">26</td>
+                                        <td class="table-cell">女</td>
+                                        <td class="table-cell">特勤二中队</td>
+                                        <td class="table-cell">指导员</td>
+                                        <td class="table-cell">2019-07-22</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </td>
+                                        <td class="table-cell">FF-2024-0004</td>
+                                        <td class="table-cell">赵强</td>
+                                        <td class="table-cell">30</td>
+                                        <td class="table-cell">男</td>
+                                        <td class="table-cell">战勤保障大队</td>
+                                        <td class="table-cell">大队长</td>
+                                        <td class="table-cell">2017-02-08</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">
+                                            <input type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                        </td>
+                                        <td class="table-cell">FF-2024-0005</td>
+                                        <td class="table-cell">刘洋</td>
+                                        <td class="table-cell">24</td>
+                                        <td class="table-cell">男</td>
+                                        <td class="table-cell">消防训练基地</td>
+                                        <td class="table-cell">训练员</td>
+                                        <td class="table-cell">2020-01-15</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500">
+                                    显示 <span class="font-medium">1</span> 到 <span class="font-medium">5</span> 共 <span class="font-medium">128</span> 条记录
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="btn-outline mr-2 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                    <button class="btn-primary mr-2">1</button>
+                                    <button class="btn-outline mr-2">2</button>
+                                    <button class="btn-outline mr-2">3</button>
+                                    <button class="btn-outline mr-2">...</button>
+                                    <button class="btn-outline mr-2">26</button>
+                                    <button class="btn-outline">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 考核管理页面 -->
+                <section id="assessment" class="page-section hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">考核管理</h2>
+                        <div>
+                            <button id="add-assessment-btn" class="btn-secondary mr-2">
+                                <i class="fa fa-plus mr-2"></i>新增考核
+                            </button>
+                            <button id="import-results-btn" class="btn-primary">
+                                <i class="fa fa-upload mr-2"></i>导入成绩
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 考核项目设置 -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <div class="px-6 py-4 border-b gradient-bg mb-4">
+                            <h3 class="text-lg font-semibold text-white">考核项目设置</h3>
+                        </div>
+                        <div class="overflow-x-auto mobile-scroll">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="table-header">项目ID</th>
+                                        <th scope="col" class="table-header">项目名称</th>
+                                        <th scope="col" class="table-header">单位</th>
+                                        <th scope="col" class="table-header">考核类型</th>
+                                        <th scope="col" class="table-header">满分</th>
+                                        <th scope="col" class="table-header">状态</th>
+                                        <th scope="col" class="table-header">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr class="table-row">
+                                        <td class="table-cell">ITEM-001</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">分钟:秒</td>
+                                        <td class="table-cell">体能</td>
+                                        <td class="table-cell">100</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">启用</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-cog"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">ITEM-002</td>
+                                        <td class="table-cell">100米负重跑</td>
+                                        <td class="table-cell">秒</td>
+                                        <td class="table-cell">体能</td>
+                                        <td class="table-cell">100</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">启用</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-cog"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">ITEM-003</td>
+                                        <td class="table-cell">单杠引体向上</td>
+                                        <td class="table-cell">次</td>
+                                        <td class="table-cell">体能</td>
+                                        <td class="table-cell">100</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">启用</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-cog"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">ITEM-004</td>
+                                        <td class="table-cell">灭火技能</td>
+                                        <td class="table-cell">分</td>
+                                        <td class="table-cell">技能</td>
+                                        <td class="table-cell">100</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">启用</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-cog"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">ITEM-005</td>
+                                        <td class="table-cell">理论知识</td>
+                                        <td class="table-cell">分</td>
+                                        <td class="table-cell">理论</td>
+                                        <td class="table-cell">100</td>
+                                        <td class="table-cell">
+                                            <span class="badge bg-green-100 text-green-800 px-2 py-1 text-xs font-semibold rounded-full">启用</span>
+                                        </td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 touch-friendly">
+                                                <i class="fa fa-cog"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 智能评分系统 -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <div class="px-6 py-4 border-b gradient-bg mb-4">
+                            <h3 class="text-lg font-semibold text-white">智能评分系统</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <div class="form-group">
+                                    <label for="firefighter-select" class="form-label">选择消防员</label>
+                                    <select id="firefighter-select" class="form-input">
+                                        <option value="">请选择消防员</option>
+                                        <option value="FF-2024-0001">张明 (FF-2024-0001)</option>
+                                        <option value="FF-2024-0002">李华 (FF-2024-0002)</option>
+                                        <option value="FF-2024-0003">王芳 (FF-2024-0003)</option>
+                                        <option value="FF-2024-0004">赵强 (FF-2024-0004)</option>
+                                        <option value="FF-2024-0005">刘洋 (FF-2024-0005)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assessment-item" class="form-label">考核项目</label>
+                                    <select id="assessment-item" class="form-input">
+                                        <option value="">请选择考核项目</option>
+                                        <option value="ITEM-001">3000米跑</option>
+                                        <option value="ITEM-002">100米负重跑</option>
+                                        <option value="ITEM-003">单杠引体向上</option>
+                                        <option value="ITEM-004">灭火技能</option>
+                                        <option value="ITEM-005">理论知识</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assessment-result" class="form-label">考核成绩</label>
+                                    <input type="text" id="assessment-result" class="form-input" placeholder="请输入考核成绩">
+                                </div>
+                                <div class="form-group">
+                                    <label for="assessment-date" class="form-label">考核日期</label>
+                                    <input type="date" id="assessment-date" class="form-input">
+                                </div>
+                                <div class="mt-4">
+                                    <button id="calculate-score-btn" class="btn-secondary">
+                                        <i class="fa fa-calculator mr-2"></i>计算得分
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <h4 class="text-md font-semibold text-gray-800 mb-3">评分结果</h4>
+                                <div id="score-result" class="hidden">
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600">消防员信息</p>
+                                        <p class="text-lg font-medium text-gray-900" id="result-name">张明 (FF-2024-0001)</p>
+                                        <p class="text-sm text-gray-600" id="result-age">年龄: 28岁</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600">考核项目</p>
+                                        <p class="text-lg font-medium text-gray-900" id="result-item">3000米跑</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600">考核成绩</p>
+                                        <p class="text-lg font-medium text-gray-900" id="result-performance">12:35</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600">得分</p>
+                                        <p class="text-2xl font-bold text-secondary" id="result-score">85分</p>
+                                    </div>
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600">评价</p>
+                                        <p class="text-md font-medium text-gray-900" id="result-rating">良好，继续保持</p>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button id="save-result-btn" class="btn-primary">
+                                            <i class="fa fa-save mr-2"></i>保存结果
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="score-placeholder" class="flex items-center justify-center h-full">
+                                    <p class="text-gray-500">请输入考核信息并计算得分</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 考核记录 -->
+                    <div class="bg-white rounded-lg shadow mb-6">
+                        <div class="px-6 py-4 border-b gradient-bg">
+                            <h3 class="text-lg font-semibold text-white">考核记录</h3>
+                        </div>
+                        <div class="overflow-x-auto mobile-scroll">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="table-header">记录ID</th>
+                                        <th scope="col" class="table-header">消防员</th>
+                                        <th scope="col" class="table-header">考核项目</th>
+                                        <th scope="col" class="table-header">考核成绩</th>
+                                        <th scope="col" class="table-header">得分</th>
+                                        <th scope="col" class="table-header">考核日期</th>
+                                        <th scope="col" class="table-header">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr class="table-row">
+                                        <td class="table-cell">REC-2024-0721-001</td>
+                                        <td class="table-cell">张明 (FF-2024-0001)</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">12:35</td>
+                                        <td class="table-cell">85</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">REC-2024-0721-002</td>
+                                        <td class="table-cell">李华 (FF-2024-0002)</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">11:48</td>
+                                        <td class="table-cell">92</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">REC-2024-0721-003</td>
+                                        <td class="table-cell">王芳 (FF-2024-0003)</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">13:22</td>
+                                        <td class="table-cell">78</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">REC-2024-0721-004</td>
+                                        <td class="table-cell">赵强 (FF-2024-0004)</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">12:10</td>
+                                        <td class="table-cell">88</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row">
+                                        <td class="table-cell">REC-2024-0721-005</td>
+                                        <td class="table-cell">刘洋 (FF-2024-0005)</td>
+                                        <td class="table-cell">3000米跑</td>
+                                        <td class="table-cell">11:35</td>
+                                        <td class="table-cell">94</td>
+                                        <td class="table-cell">2024-07-21</td>
+                                        <td class="table-cell">
+                                            <button class="text-primary hover:text-primary-dark mr-2 touch-friendly">
+                                                <i class="fa fa-eye"></i>
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-900 mr-2 touch-friendly">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                            <button class="text-danger hover:text-red-700 touch-friendly">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="px-6 py-4 border-t">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-500">
+                                    显示 <span class="font-medium">1</span> 到 <span class="font-medium">5</span> 共 <span class="font-medium">156</span> 条记录
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="btn-outline mr-2 disabled:opacity-50" disabled>
+                                        <i class="fa fa-chevron-left"></i>
+                                    </button>
+                                    <button class="btn-primary mr-2">1</button>
+                                    <button class="btn-outline mr-2">2</button>
+                                    <button class="btn-outline mr-2">3</button>
+                                    <button class="btn-outline mr-2">...</button>
+                                    <button class="btn-outline mr-2">32</button>
+                                    <button class="btn-outline">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 数据看板页面 -->
+                <section id="data-board" class="page-section hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">数据看板</h2>
+                        <div>
+                            <button class="btn-outline mr-2">
+                                <i class="fa fa-calendar mr-2"></i>本月
+                            </button>
+                            <button class="btn-secondary">
+                                <i class="fa fa-refresh mr-2"></i>刷新数据
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 个人分析 -->
+                    <div class="bg-white rounded-lg shadow p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">个人项目弱势分析</h3>
+                            <div class="form-group">
+                                <select id="personal-analysis-select" class="form-input">
+                                    <option value="FF-2024-0001">张明 (FF-2024-0001)</option>
+                                    <option value="FF-2024-0002">李华 (FF-2024-0002)</option>
+                                    <option value="FF-2024-0003">王芳 (FF-2024-0003)</option>
+                                    <option value="FF-2024-0004">赵强 (FF-2024-0004)</option>
+                                    <option value="FF-2024-0005">刘洋 (FF-2024-0005)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="h-80">
+                                <canvas id="personalAnalysisChart"></canvas>
+                            </div>
+                            <div>
+                                <h4 class="text-md font-semibold text-gray-800 mb-3">弱势项目分析
